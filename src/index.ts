@@ -42,6 +42,18 @@ function buildHeader (db: Database, tables: string[], schema: string|null, optio
          *
          */
 
+        export class CommonModel {
+          createdAt: Date;
+          updatedAt: Date;
+          id: number;
+        
+          constructor(raw: any) {
+            this.createdAt = new Date(raw['createdAt']);
+            this.updatedAt = new Date(raw['updatedAt']);
+            this.id = raw['id'] as number;
+          }
+        }
+        
     `
 }
 

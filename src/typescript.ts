@@ -28,13 +28,33 @@ function normalizeName (name: string, options: Options): string {
 export function generateTableInterface (tableNameRaw: string, tableDefinition: TableDefinition, options: Options) {
     const tableName = options.transformTypeName(tableNameRaw)
     let members = ''
-    Object.keys(tableDefinition).map(c => options.transformColumnName(c)).forEach((columnName) => {
+    Object.keys(tableDefinition).filter(c=>['id', 'createdAt', 'updatedAt'].indexOf(c)<0).map(c => options.transformColumnName(c)).forEach((columnName) => {
         members += `${columnName}: ${tableName}Fields.${normalizeName(columnName, options)};\n`
     })
+    const constructorstr = Object.keys(tableDefinition).filter(c=>['id', 'createdAt', 'updatedAt'].indexOf(c)<0).map(c => {
+      const definition = tableDefinition[c];
+      const fieldType = definition['tsType'];
+      const fieldName = options.transformColumnName(c);
+      const type = `${tableName}Fields.${normalizeName(fieldName, options)}`;
+      let assignToField = '';
+      switch (fieldType) {
+        case 'Date':
+          assignToField = `this.${fieldName} = !!raw['${c}'] ? new Date(raw['${c}']) : null;`;
+          break;
+        default: 
+          assignToField = `this.${fieldName} = raw['${c}'] as ${type};`;
+      }
+      return assignToField;
+    }).join('\n');
 
     return `
-        export interface ${normalizeName(tableName, options)} {
+        export class ${normalizeName(tableName, options)} extends CommonModel {
         ${members}
+
+          constructor(raw:any) {
+            super(raw);
+            ${constructorstr}
+          }
         }
     `
 }
