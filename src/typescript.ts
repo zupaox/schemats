@@ -12,7 +12,8 @@ function nameIsReservedKeyword (name: string): boolean {
     const reservedKeywords = [
         'string',
         'number',
-        'package'
+        'package',
+        'symbol'
     ]
     return reservedKeywords.indexOf(name) !== -1
 }
@@ -39,7 +40,8 @@ export function generateTableInterface (tableNameRaw: string, tableDefinition: T
       let assignToField = '';
       switch (fieldType) {
         case 'Date':
-          assignToField = `this.${fieldName} = !!raw['${c}'] ? new Date(raw['${c}']) : null;`;
+          const nullable = tableDefinition[c].nullable;
+          assignToField = nullable ?  `this.${fieldName} = !!raw['${c}'] ? new Date(raw['${c}']) : null;` : `this.${fieldName} = new Date(raw['${c}']);`;
           break;
         default: 
           assignToField = `this.${fieldName} = raw['${c}'] as ${type};`;
@@ -48,15 +50,17 @@ export function generateTableInterface (tableNameRaw: string, tableDefinition: T
     }).join('\n');
 
     return `
-        export class ${normalizeName(tableName, options)} extends CommonModel {
-        ${members}
+export class ${normalizeName(tableName, options)} extends CommonModel {
+  static tableName = '${tableNameRaw}';
+  ${members}
 
-          constructor(raw:any) {
-            super(raw);
-            ${constructorstr}
-          }
-        }
-    `
+  constructor(raw:any) {
+    super(raw);
+    ${constructorstr}
+  }
+}
+
+`
 }
 
 export function generateEnumType (enumObject: any, options: Options) {

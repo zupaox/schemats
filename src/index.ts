@@ -42,12 +42,15 @@ function buildHeader (db: Database, tables: string[], schema: string|null, optio
          *
          */
 
-        export class CommonModel {
+        import { PgBaseModel } from '../database/postgres/PgBaseModel';
+
+        export class CommonModel extends PgBaseModel {
           createdAt: Date;
           updatedAt: Date;
           id: number;
         
           constructor(raw: any) {
+            super();
             this.createdAt = new Date(raw['createdAt']);
             this.updatedAt = new Date(raw['updatedAt']);
             this.id = raw['id'] as number;
@@ -95,7 +98,7 @@ export async function typescriptOfSchema (db: Database|string,
     const interfaces = await Promise.all(interfacePromises)
         .then(tsOfTable => tsOfTable.join(''))
 
-    let output = '/* tslint:disable */\n\n'
+    let output ='/* tslint:disable */\n\n/* eslint-disable */\n\n';
     if (optionsObject.options.writeHeader) {
         output += buildHeader(db, tables, schema, options)
     }
